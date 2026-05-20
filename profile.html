@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 业务人员定制化特征计算平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary:'#165DFF', success:'#00B42A', warning:'#FF7D00', danger:'#F53F3F' } } }
+        }
+    </script>
+    <style>
+        .card-shadow { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+        .tab-btn.active { color: #165DFF; border-bottom: 2px solid #165DFF; font-weight: 600; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .form-input { width:100%; border:1px solid #E5E6EB; border-radius:6px; padding:8px 12px; font-size:14px; outline:none; transition:all 0.2s; }
+        .form-input:focus { border-color:#165DFF; box-shadow:0 0 0 3px rgba(22,93,255,0.1); }
+        .badge-feature { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; background:#EBF0FF; color:#165DFF; margin:2px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen" style="font-family:'Inter','PingFang SC',system-ui,sans-serif;">
+
+<header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+    <div class="max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
+        <div class="flex items-center gap-3">
+            <i class="fa fa-bank text-primary text-lg"></i>
+            <span class="font-bold text-gray-800 text-base">银行业务特征计算平台</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-1">
+            <a href="index.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-sign-in mr-1"></i>登录</a>
+            <a href="dashboard.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-dashboard mr-1"></i>分析工作台</a>
+            <a href="result.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-bar-chart mr-1"></i>分析结果</a>
+            <a href="history.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-history mr-1"></i>历史记录</a>
+            <a href="profile.html" class="px-3 py-1.5 text-sm text-primary font-medium bg-primary/5 rounded"><i class="fa fa-user mr-1"></i>个人中心</a>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-screen-2xl mx-auto p-4 space-y-4">
+    <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold" id="avatar-display">业</div>
+        <div>
+            <h1 class="text-xl font-bold text-gray-800" id="profile-name">业务人员</h1>
+            <p class="text-sm text-gray-400">内控部 · 反洗钱岗</p>
+            <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">数据分析师</span>
+                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">● 在线</span>
+            </div>
+        </div>
+        <div class="ml-auto hidden md:flex gap-6 text-center">
+            <div><div class="text-2xl font-bold text-primary" id="pro-task-count">12</div><div class="text-xs text-gray-400">历史任务</div></div>
+            <div><div class="text-2xl font-bold text-success" id="pro-template-count">5</div><div class="text-xs text-gray-400">常用模板</div></div>
+            <div><div class="text-2xl font-bold text-warning">30</div><div class="text-xs text-gray-400">使用天数</div></div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-xl card-shadow overflow-hidden">
+        <div class="flex border-b border-gray-100 overflow-x-auto">
+            <button class="tab-btn active px-5 py-3.5 text-sm text-gray-500 border-b-2 border-transparent whitespace-nowrap" data-tab="profile" onclick="switchTab('profile')"><i class="fa fa-user-o mr-1.5"></i>个人信息</button>
+            <button class="tab-btn px-5 py-3.5 text-sm text-gray-500 border-b-2 border-transparent whitespace-nowrap" data-tab="templates" onclick="switchTab('templates')"><i class="fa fa-bookmark-o mr-1.5"></i>特征模板</button>
+            <button class="tab-btn px-5 py-3.5 text-sm text-gray-500 border-b-2 border-transparent whitespace-nowrap" data-tab="stats" onclick="switchTab('stats')"><i class="fa fa-pie-chart mr-1.5"></i>使用统计</button>
+            <button class="tab-btn px-5 py-3.5 text-sm text-gray-500 border-b-2 border-transparent whitespace-nowrap" data-tab="settings" onclick="switchTab('settings')"><i class="fa fa-cog mr-1.5"></i>偏好设置</button>
+        </div>
+
+        <!-- 个人信息 -->
+        <div class="tab-panel active p-6" id="tab-profile">
+            <div class="max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">用户名</label>
+                    <input class="form-input" id="pf-name" placeholder="请输入姓名">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">工号</label>
+                    <input class="form-input" value="YW20260001" disabled style="background:#F2F3F5;color:#86909C;">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">所属部门</label>
+                    <select class="form-input" id="pf-dept">
+                        <option>内控合规部</option>
+                        <option>风险管理部</option>
+                        <option>合规审查部</option>
+                        <option>反洗钱工作室</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">岗位</label>
+                    <select class="form-input" id="pf-role">
+                        <option>内控岗</option>
+                        <option>反假货币岗</option>
+                        <option>反电信诈骗岗</option>
+                        <option>合规审查岗</option>
+                        <option>数据分析岗</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">手机号码</label>
+                    <input class="form-input" id="pf-phone" type="tel" placeholder="请输入手机号">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">邮箱</label>
+                    <input class="form-input" id="pf-email" type="email" placeholder="请输入邮箱">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-500 mb-1">工作职责简介</label>
+                    <textarea class="form-input" rows="3" id="pf-bio" placeholder="简单描述您的工作职责..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-5">
+                <button onclick="saveProfile()" class="px-5 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors"><i class="fa fa-save mr-1.5"></i>保存信息</button>
+                <button onclick="loadProfile()" class="px-4 py-2 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">重置</button>
+            </div>
+            <div id="save-msg" class="hidden mt-3 text-sm text-success"><i class="fa fa-check-circle mr-1"></i>保存成功</div>
+        </div>
+
+        <!-- 特征模板 -->
+        <div class="tab-panel p-6" id="tab-templates">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-700">我的特征模板</h3>
+                <button onclick="showAddTemplate()" class="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary/90 transition-colors"><i class="fa fa-plus mr-1"></i>新建模板</button>
+            </div>
+            <div id="template-list" class="space-y-3"></div>
+
+            <!-- 新增模板表单 -->
+            <div id="add-template-form" class="hidden mt-4 p-4 border border-primary/30 rounded-xl bg-blue-50">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">新建特征模板</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">模板名称</label>
+                        <input id="tmpl-name" class="form-input text-sm" placeholder="如：反洗钱专项检查">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">分析类型</label>
+                        <select id="tmpl-type" class="form-input text-sm">
+                            <option>风险评估</option>
+                            <option>行为分析</option>
+                            <option>资产分析</option>
+                            <option>合规审查</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 block mb-2">选择特征（可多选）</label>
+                    <div class="flex flex-wrap gap-2" id="tmpl-feature-select">
+                        ${['listStatus','riskScore','riskLevel','gradeStatus','gradeChange','tempAdjust','balance','totalAsset','avgBalance','outPeak','inPeak','transTrend','strangerRatio','age','job'].map(k => 
+                            `<label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="${k}" class="accent-primary tmpl-feat-cb"> ${k}</label>`
+                        ).join('')}
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveTemplate()" class="px-4 py-1.5 bg-success text-white text-xs rounded hover:bg-success/90">保存模板</button>
+                    <button onclick="hideAddTemplate()" class="px-4 py-1.5 border border-gray-200 text-gray-600 text-xs rounded hover:bg-gray-50">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用统计 -->
+        <div class="tab-panel p-6" id="tab-stats">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">最常用特征 Top 10</h4>
+                    <div id="feature-usage-chart" style="height:280px;"></div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">月度任务统计</h4>
+                    <div id="monthly-chart" style="height:280px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 偏好设置 -->
+        <div class="tab-panel p-6" id="tab-settings">
+            <div class="max-w-xl space-y-5">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">默认输出格式</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="def-format" value="table" checked class="accent-primary"> 表格显示</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="def-format" value="card" class="accent-primary"> 卡片显示</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="def-format" value="chart" class="accent-primary"> 图表显示</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="def-format" value="all" class="accent-primary"> 综合视图</label>
+                    </div>
+                </div>
+                <div class="border-t pt-5">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">默认附加分析项</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary" id="def-trans" checked> 默认包含交易明细分析</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary" id="def-risk" checked> 默认包含风险可视化</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary" id="def-export"> 自动启用导出功能</label>
+                    </div>
+                </div>
+                <div class="border-t pt-5">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">通知设置</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary" checked> 高风险客户预警通知</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary" checked> 分级分类变动通知</label>
+                        <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" class="accent-primary"> 系统维护通知</label>
+                    </div>
+                </div>
+                <button onclick="saveSettings()" class="px-5 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors"><i class="fa fa-save mr-1.5"></i>保存设置</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+// Tab切换
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'tab-'+name);
+    });
+    if (name === 'stats') initStatsCharts();
+}
+
+// 个人信息
+function loadProfile() {
+    const username = sessionStorage.getItem('username') || '业务人员';
+    const saved = JSON.parse(localStorage.getItem('profileData') || '{}');
+    document.getElementById('pf-name').value = saved.name || username;
+    document.getElementById('pf-phone').value = saved.phone || '';
+    document.getElementById('pf-email').value = saved.email || '';
+    document.getElementById('pf-bio').value = saved.bio || '';
+    document.getElementById('profile-name').textContent = saved.name || username;
+    document.getElementById('avatar-display').textContent = (saved.name || username)[0];
+}
+
+function saveProfile() {
+    const data = {
+        name: document.getElementById('pf-name').value,
+        phone: document.getElementById('pf-phone').value,
+        email: document.getElementById('pf-email').value,
+        bio: document.getElementById('pf-bio').value
+    };
+    localStorage.setItem('profileData', JSON.stringify(data));
+    document.getElementById('profile-name').textContent = data.name || '业务人员';
+    document.getElementById('avatar-display').textContent = (data.name||'业')[0];
+    const msg = document.getElementById('save-msg');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+}
+
+// 模板管理
+const DEFAULT_TEMPLATES = [
+    { id:1, name:'反洗钱专项检查', type:'风险评估', features:['listStatus','gradeStatus','tempAdjust','riskScore','riskLevel'], useCount:8, time:'2026-05-01' },
+    { id:2, name:'高净值客户资产分析', type:'资产分析', features:['balance','totalAsset','avgBalance','assetLevel','outPeak','inPeak'], useCount:5, time:'2026-05-10' },
+    { id:3, name:'异常交易行为识别', type:'行为分析', features:['strangerRatio','transTrend','outPeak','listStatus','tempAdjust'], useCount:12, time:'2026-05-08' },
+    { id:4, name:'工资代发客户监测', type:'合规审查', features:['lastSalary','salaryMonths','balance','loan'], useCount:3, time:'2026-05-15' },
+    { id:5, name:'客户分级变动追踪', type:'合规审查', features:['gradeStatus','gradeChange','recentRemove','tempAdjust'], useCount:6, time:'2026-05-18' },
+];
+
+function renderTemplates() {
+    const saved = JSON.parse(localStorage.getItem('templates') || '[]');
+    const all = [...DEFAULT_TEMPLATES, ...saved];
+    document.getElementById('pro-template-count').textContent = all.length;
+    const list = document.getElementById('template-list');
+    list.innerHTML = all.map(t => `
+        <div class="border border-gray-100 rounded-xl p-4 hover:border-primary/30 hover:bg-blue-50/20 transition-colors">
+            <div class="flex items-start justify-between">
+                <div>
+                    <div class="font-semibold text-gray-800 text-sm">${t.name}</div>
+                    <div class="text-xs text-gray-400 mt-1">类型：${t.type} | 已用 ${t.useCount} 次 | 创建于 ${t.time}</div>
+                    <div class="mt-2">${(t.features||[]).map(f=>`<span class="badge-feature">${f}</span>`).join('')}</div>
+                </div>
+                <div class="flex gap-2 ml-3">
+                    <button onclick="useTemplate(${t.id})" class="text-xs px-2 py-1 bg-primary/10 text-primary rounded hover:bg-primary/20"><i class="fa fa-play mr-0.5"></i>使用</button>
+                    <button onclick="deleteTemplate(${t.id})" class="text-xs px-2 py-1 bg-danger/10 text-danger rounded hover:bg-danger/20"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
+function showAddTemplate() { document.getElementById('add-template-form').classList.remove('hidden'); }
+function hideAddTemplate() { document.getElementById('add-template-form').classList.add('hidden'); }
+
+function saveTemplate() {
+    const name = document.getElementById('tmpl-name').value.trim();
+    const type = document.getElementById('tmpl-type').value;
+    const features = Array.from(document.querySelectorAll('.tmpl-feat-cb:checked')).map(cb => cb.value);
+    if (!name) { alert('请输入模板名称'); return; }
+    if (!features.length) { alert('请选择至少一个特征'); return; }
+    const saved = JSON.parse(localStorage.getItem('templates') || '[]');
+    saved.push({ id: Date.now(), name, type, features, useCount:0, time: new Date().toLocaleDateString() });
+    localStorage.setItem('templates', JSON.stringify(saved));
+    hideAddTemplate();
+    renderTemplates();
+}
+
+function deleteTemplate(id) {
+    const saved = JSON.parse(localStorage.getItem('templates') || '[]').filter(t => t.id !== id);
+    localStorage.setItem('templates', JSON.stringify(saved));
+    renderTemplates();
+}
+
+function useTemplate(id) { location.href = 'dashboard.html'; }
+
+// 使用统计图表
+function initStatsCharts() {
+    const featureEl = document.getElementById('feature-usage-chart');
+    const monthEl = document.getElementById('monthly-chart');
+    if (featureEl && window.echarts && !featureEl._chart) {
+        const chart = echarts.init(featureEl);
+        featureEl._chart = chart;
+        chart.setOption({
+            tooltip: { trigger:'axis' },
+            xAxis: { type:'value', axisLabel:{fontSize:10} },
+            yAxis: { type:'category', data:['listStatus','riskScore','gradeStatus','balance','outPeak','totalAsset','tempAdjust','strangerRatio','riskLevel','avgBalance'], axisLabel:{fontSize:10} },
+            series: [{
+                type:'bar', data:[45,38,32,28,25,22,18,15,14,12],
+                color:'#165DFF', barWidth:'60%',
+                itemStyle:{ borderRadius:[0,4,4,0] }
+            }],
+            grid: { left:80, right:20, top:10, bottom:25 }
+        });
+    }
+    if (monthEl && window.echarts && !monthEl._chart) {
+        const chart = echarts.init(monthEl);
+        monthEl._chart = chart;
+        chart.setOption({
+            tooltip: {},
+            xAxis: { type:'category', data:['1月','2月','3月','4月','5月'], axisLabel:{fontSize:10} },
+            yAxis: { type:'value', axisLabel:{fontSize:10} },
+            series: [{
+                type:'bar', data:[8,15,12,20,28],
+                color:'#00B42A', barWidth:'50%',
+                itemStyle:{ borderRadius:[4,4,0,0] }
+            }],
+            grid: { left:30, right:10, top:10, bottom:30 }
+        });
+    }
+}
+
+function saveSettings() {
+    alert('设置已保存');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    loadProfile();
+    renderTemplates();
+});
+</script>
+</body>
+</html>
