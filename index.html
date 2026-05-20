@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务人员定制化特征计算平台 - 登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex flex-col">
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-bank text-primary text-xl"></i>
+                    <span class="text-xl font-bold text-primary">银行业务特征计算平台</span>
+                </div>
+                <div class="hidden sm:flex space-x-6 text-sm text-gray-500">
+                    <a href="dashboard.html" class="hover:text-primary transition-colors">分析工作台</a>
+                    <a href="result.html" class="hover:text-primary transition-colors">分析结果</a>
+                    <a href="history.html" class="hover:text-primary transition-colors">历史记录</a>
+                    <a href="profile.html" class="hover:text-primary transition-colors">个人中心</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow flex items-center justify-center py-12 px-4">
+        <div class="max-w-md w-full">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <i class="fa fa-user-circle text-primary text-3xl"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-gray-900">业务人员登录</h2>
+                <p class="mt-2 text-sm text-gray-600">定制化特征计算与显示功能平台</p>
+            </div>
+            <div class="bg-white py-8 px-6 shadow-xl rounded-xl space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa fa-user"></i></span>
+                        <input id="username" type="text" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="请输入用户名（如：admin）">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa fa-lock"></i></span>
+                        <input id="password" type="password" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" placeholder="请输入密码（任意填写）">
+                    </div>
+                </div>
+                <div id="login-msg" class="hidden text-sm rounded-lg px-4 py-3"></div>
+                <button id="login-btn" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                    <i class="fa fa-sign-in"></i> 登录系统
+                </button>
+                <div class="text-center text-xs text-gray-400">演示账号：任意用户名 + 任意密码即可登录</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t py-4 text-center text-sm text-gray-400">
+        © 2026 银行业务特征计算平台 · 内部系统，仅供授权人员使用
+    </footer>
+
+    <script>
+        document.getElementById('login-btn').addEventListener('click', function() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const msg = document.getElementById('login-msg');
+            if (!u || !p) {
+                msg.className = 'text-sm rounded-lg px-4 py-3 bg-red-50 text-red-600 border border-red-200';
+                msg.textContent = '请输入用户名和密码';
+                msg.classList.remove('hidden');
+                return;
+            }
+            msg.className = 'text-sm rounded-lg px-4 py-3 bg-blue-50 text-blue-600 border border-blue-200';
+            msg.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> 正在验证身份...';
+            msg.classList.remove('hidden');
+            sessionStorage.setItem('username', u);
+            sessionStorage.setItem('loggedIn', 'true');
+            setTimeout(() => {
+                msg.className = 'text-sm rounded-lg px-4 py-3 bg-green-50 text-green-600 border border-green-200';
+                msg.innerHTML = '<i class="fa fa-check-circle mr-1"></i> 登录成功，正在跳转...';
+                setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+            }, 1000);
+        });
+        document.getElementById('password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('login-btn').click();
+        });
+        if (sessionStorage.getItem('loggedIn')) window.location.href = 'dashboard.html';
+    </script>
+</body>
+</html>
