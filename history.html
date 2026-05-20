@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史查询记录 - 业务人员定制化特征计算平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary:'#165DFF', success:'#00B42A', warning:'#FF7D00', danger:'#F53F3F' } } }
+        }
+    </script>
+    <style>
+        .card-shadow { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+        .row-hover:hover { background: #F0F5FF; }
+        .scrollbar-thin::-webkit-scrollbar { width:4px; height:4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background:#C9CDD4; border-radius:2px; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen" style="font-family:'Inter','PingFang SC',system-ui,sans-serif;">
+
+<header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+    <div class="max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
+        <div class="flex items-center gap-3">
+            <i class="fa fa-bank text-primary text-lg"></i>
+            <span class="font-bold text-gray-800 text-base">银行业务特征计算平台</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-1">
+            <a href="index.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-sign-in mr-1"></i>登录</a>
+            <a href="dashboard.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-dashboard mr-1"></i>分析工作台</a>
+            <a href="result.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-bar-chart mr-1"></i>分析结果</a>
+            <a href="history.html" class="px-3 py-1.5 text-sm text-primary font-medium bg-primary/5 rounded"><i class="fa fa-history mr-1"></i>历史记录</a>
+            <a href="profile.html" class="px-3 py-1.5 text-sm text-gray-500 hover:text-primary rounded transition-colors"><i class="fa fa-user mr-1"></i>个人中心</a>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-screen-2xl mx-auto p-4 space-y-4">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-gray-800">历史查询记录</h1>
+            <p class="text-sm text-gray-400">所有历史特征计算任务，含演示数据</p>
+        </div>
+        <button onclick="clearHistory()" class="text-xs px-3 py-1.5 border border-danger/30 text-danger rounded hover:bg-danger/5 transition-colors"><i class="fa fa-trash mr-1"></i>清空历史</button>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="history-stats">
+        <div class="bg-white rounded-xl card-shadow p-4 text-center">
+            <div class="text-2xl font-bold text-primary" id="stat-total">0</div>
+            <div class="text-xs text-gray-400 mt-1">总任务数</div>
+        </div>
+        <div class="bg-white rounded-xl card-shadow p-4 text-center">
+            <div class="text-2xl font-bold text-success" id="stat-success">0</div>
+            <div class="text-xs text-gray-400 mt-1">成功完成</div>
+        </div>
+        <div class="bg-white rounded-xl card-shadow p-4 text-center">
+            <div class="text-2xl font-bold text-warning" id="stat-customers">0</div>
+            <div class="text-xs text-gray-400 mt-1">涉及客户数</div>
+        </div>
+        <div class="bg-white rounded-xl card-shadow p-4 text-center">
+            <div class="text-2xl font-bold text-gray-600" id="stat-features">0</div>
+            <div class="text-xs text-gray-400 mt-1">特征计算总次</div>
+        </div>
+    </div>
+
+    <!-- 活动趋势图 -->
+    <div class="bg-white rounded-xl card-shadow p-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fa fa-line-chart text-primary"></i> 近30天查询活动趋势</h3>
+        <div id="trend-chart" style="height:180px;"></div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="bg-white rounded-xl card-shadow p-4 flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-40">
+            <label class="block text-xs text-gray-500 mb-1">关键词搜索</label>
+            <input id="search-kw" type="text" placeholder="客户名/客户号..." 
+                class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">状态</label>
+            <select id="filter-status" class="text-sm border border-gray-200 rounded px-3 py-1.5 focus:ring-2 focus:ring-primary/30 outline-none">
+                <option value="all">全部</option>
+                <option value="success">成功</option>
+                <option value="running">进行中</option>
+                <option value="failed">失败</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-gray-500 mb-1">时间范围</label>
+            <select id="filter-time" class="text-sm border border-gray-200 rounded px-3 py-1.5 focus:ring-2 focus:ring-primary/30 outline-none">
+                <option value="all">全部</option>
+                <option value="today">今天</option>
+                <option value="week">近7天</option>
+                <option value="month">近30天</option>
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="applyFilter()" class="px-4 py-1.5 bg-primary text-white text-sm rounded hover:bg-primary/90 transition-colors"><i class="fa fa-filter mr-1"></i>筛选</button>
+            <button onclick="resetFilter()" class="px-4 py-1.5 border border-gray-200 text-gray-600 text-sm rounded hover:bg-gray-50 transition-colors">重置</button>
+        </div>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="bg-white rounded-xl card-shadow overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800 flex items-center gap-2"><i class="fa fa-list text-primary"></i> 任务记录</h3>
+            <span class="text-xs text-gray-400">共 <span id="list-count" class="text-primary font-medium">0</span> 条</span>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500">任务名称</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500">客户</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500">特征数量</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500">提交时间</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500">状态</th>
+                        <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script>
+// 演示历史数据
+const DEMO_HISTORY = [
+    { id:1001, name:'孙明反洗钱特征分析', customer:'孙明', customerId:'1558126575', features:['listStatus','gradeStatus','tempAdjust','riskScore','balance'], time:'2026-05-20 09:12:35', status:'success' },
+    { id:1002, name:'赵洋可疑监控综合评估', customer:'赵洋', customerId:'8817679924', features:['listStatus','riskScore','riskLevel','outPeak','inPeak','strangerRatio'], time:'2026-05-20 09:45:10', status:'success' },
+    { id:1003, name:'马勇高风险客户特征', customer:'马勇', customerId:'6110527306', features:['listStatus','gradeStatus','recentRemove','gradeChange','tempAdjust','riskScore','riskLevel'], time:'2026-05-20 10:03:22', status:'success' },
+    { id:1004, name:'批量工资代发特征', customer:'徐欣', customerId:'5847178157', features:['lastSalary','salaryMonths','balance','avgBalance'], time:'2026-05-19 14:25:47', status:'success' },
+    { id:1005, name:'高净值客户资产特征', customer:'高浩', customerId:'1677165282', features:['balance','totalAsset','avgBalance','assetLevel'], time:'2026-05-19 15:32:18', status:'success' },
+    { id:1006, name:'王强交易特征计算', customer:'王强', customerId:'5593414376', features:['outPeak','inPeak','transTrend','transCount','strangerRatio'], time:'2026-05-19 16:47:05', status:'failed' },
+    { id:1007, name:'陈明分级变动追踪', customer:'陈明', customerId:'0395401252', features:['gradeStatus','gradeChange','recentRemove','tempAdjust'], time:'2026-05-18 10:15:30', status:'success' },
+    { id:1008, name:'何颖全量特征分析', customer:'何颖', customerId:'6194873663', features:['age','job','balance','totalAsset','outPeak','inPeak','listStatus','gradeStatus','riskScore'], time:'2026-05-18 11:08:42', status:'success' },
+    { id:1009, name:'黄敏涉敏关联评估', customer:'黄敏', customerId:'3407466875', features:['listStatus','gradeStatus','tempAdjust','riskScore','riskLevel','strangerRatio'], time:'2026-05-17 09:30:15', status:'running' },
+    { id:1010, name:'周娜退休客户基础特征', customer:'周娜', customerId:'7671463894', features:['age','job','balance','opendate','loan'], time:'2026-05-17 14:22:08', status:'success' },
+    { id:1011, name:'马敏综合风险快速筛查', customer:'马敏', customerId:'1039445537', features:['listStatus','riskScore','riskLevel'], time:'2026-05-16 10:00:00', status:'success' },
+    { id:1012, name:'黄强分级监控专项', customer:'黄强', customerId:'2316026774', features:['gradeStatus','gradeChange','tempAdjust','listStatus'], time:'2026-05-15 16:35:50', status:'success' },
+];
+
+let allHistory = [];
+let filteredHistory = [];
+
+function initHistory() {
+    const saved = JSON.parse(localStorage.getItem('featureHistory') || '[]');
+    allHistory = [...saved, ...DEMO_HISTORY];
+    filteredHistory = [...allHistory];
+    updateStats();
+    renderList(filteredHistory);
+    initTrendChart();
+}
+
+function updateStats() {
+    const success = allHistory.filter(h => h.status === 'success').length;
+    const customers = new Set(allHistory.map(h => h.customerId)).size;
+    const featureTotal = allHistory.reduce((s, h) => s + (h.features?.length || 0), 0);
+    document.getElementById('stat-total').textContent = allHistory.length;
+    document.getElementById('stat-success').textContent = success;
+    document.getElementById('stat-customers').textContent = customers;
+    document.getElementById('stat-features').textContent = featureTotal;
+}
+
+function renderList(list) {
+    document.getElementById('list-count').textContent = list.length;
+    const tbody = document.getElementById('history-tbody');
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-300"><i class="fa fa-inbox text-3xl block mb-2"></i>暂无记录</td></tr>';
+        return;
+    }
+    tbody.innerHTML = list.map(h => {
+        const statusClass = h.status === 'success' ? 'bg-green-100 text-green-700' 
+            : h.status === 'running' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600';
+        const statusText = h.status === 'success' ? '✓ 成功' : h.status === 'running' ? '⟳ 进行中' : '✗ 失败';
+        const featureLabels = (h.features || []).slice(0, 3).join('、') + (h.features?.length > 3 ? `等${h.features.length}项` : '');
+        return `<tr class="row-hover border-b border-gray-50 transition-colors">
+            <td class="px-5 py-3">
+                <div class="font-medium text-gray-800">${h.name}</div>
+                <div class="text-xs text-gray-400 mt-0.5">特征：${featureLabels}</div>
+            </td>
+            <td class="px-4 py-3">
+                <div class="text-sm font-medium text-gray-700">${h.customer}</div>
+                <div class="text-xs text-gray-400">${h.customerId}</div>
+            </td>
+            <td class="px-4 py-3 text-sm text-primary font-medium">${h.features?.length || 0} 项</td>
+            <td class="px-4 py-3 text-sm text-gray-500">${h.time}</td>
+            <td class="px-4 py-3">
+                <span class="text-xs px-2 py-0.5 rounded-full ${statusClass}">${statusText}</span>
+            </td>
+            <td class="px-4 py-3 text-right text-xs flex justify-end gap-2 items-center">
+                <button onclick="viewResult(${h.id})" class="text-primary hover:underline ${h.status!=='success'?'opacity-40 cursor-not-allowed':''}" ${h.status!=='success'?'disabled':''}>
+                    <i class="fa fa-eye mr-0.5"></i>查看
+                </button>
+                <button onclick="reuseTask(${h.id})" class="text-warning hover:underline">
+                    <i class="fa fa-repeat mr-0.5"></i>复用
+                </button>
+                <button onclick="deleteTask(${h.id})" class="text-danger hover:underline">
+                    <i class="fa fa-trash mr-0.5"></i>删除
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function applyFilter() {
+    const kw = document.getElementById('search-kw').value.trim().toLowerCase();
+    const status = document.getElementById('filter-status').value;
+    filteredHistory = allHistory.filter(h => {
+        const matchKw = !kw || h.customer.toLowerCase().includes(kw) || h.customerId.includes(kw) || h.name.toLowerCase().includes(kw);
+        const matchStatus = status === 'all' || h.status === status;
+        return matchKw && matchStatus;
+    });
+    renderList(filteredHistory);
+}
+
+function resetFilter() {
+    document.getElementById('search-kw').value = '';
+    document.getElementById('filter-status').value = 'all';
+    document.getElementById('filter-time').value = 'all';
+    filteredHistory = [...allHistory];
+    renderList(filteredHistory);
+}
+
+function clearHistory() {
+    if (!confirm('确定清空所有用户保存的历史记录？演示数据不会被清除。')) return;
+    localStorage.removeItem('featureHistory');
+    allHistory = [...DEMO_HISTORY];
+    filteredHistory = [...allHistory];
+    updateStats();
+    renderList(filteredHistory);
+}
+
+function viewResult(id) {
+    location.href = 'result.html';
+}
+
+function reuseTask(id) {
+    location.href = 'dashboard.html';
+}
+
+function deleteTask(id) {
+    allHistory = allHistory.filter(h => h.id !== id);
+    filteredHistory = filteredHistory.filter(h => h.id !== id);
+    const saved = JSON.parse(localStorage.getItem('featureHistory') || '[]').filter(h => h.id !== id);
+    localStorage.setItem('featureHistory', JSON.stringify(saved));
+    updateStats();
+    renderList(filteredHistory);
+}
+
+function initTrendChart() {
+    const el = document.getElementById('trend-chart');
+    if (!el || !window.echarts) return;
+    const chart = echarts.init(el);
+    // 生成近30天模拟数据
+    const dates = [], vals = [];
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dates.push(`${d.getMonth()+1}/${d.getDate()}`);
+        vals.push(Math.floor(Math.random() * 8 + 2));
+    }
+    chart.setOption({
+        tooltip: { trigger:'axis' },
+        xAxis: { type:'category', data:dates, axisLabel:{fontSize:10, interval:4} },
+        yAxis: { type:'value', minInterval:1, axisLabel:{fontSize:10} },
+        series: [{
+            type:'line', data:vals, smooth:true,
+            areaStyle:{ color:{ type:'linear', x:0,y:0,x2:0,y2:1, colorStops:[{offset:0,color:'rgba(22,93,255,0.15)'},{offset:1,color:'rgba(22,93,255,0)'}] } },
+            lineStyle:{ color:'#165DFF', width:2 }, itemStyle:{ color:'#165DFF' }
+        }],
+        grid: { left:30, right:10, top:10, bottom:25 }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', initHistory);
+</script>
+</body>
+</html>
