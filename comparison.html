@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>传统方法 VS 智能助手 - 效率对比</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            margin: 0;
+            background: #0a0a1a;
+            overflow-x: hidden;
+        }
+
+        /* === 背景粒子 === */
+        .bg-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        .particle {
+            position: absolute; border-radius: 50%; opacity: 0.15;
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* === Tab 滑块 === */
+        .tab-slider {
+            position: absolute; bottom: 0; height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+            border-radius: 3px 3px 0 0;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+        }
+
+        /* === VS 脉冲 === */
+        .vs-glow {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            width: 72px; height: 72px; flex-shrink: 0;
+        }
+        .vs-glow::before {
+            content: '';
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            animation: vs-pulse 2s ease-in-out infinite;
+        }
+        .vs-glow::after {
+            content: '';
+            position: absolute; width: 80%; height: 80%;
+            border-radius: 50%;
+            background: #0a0a1a;
+        }
+        .vs-text {
+            position: relative; z-index: 1;
+            font-weight: 900; font-size: 18px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        @keyframes vs-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 0.2; }
+        }
+
+        /* === 对比卡片动画 === */
+        .step-item {
+            opacity: 0; transform: translateX(-20px);
+            animation: slide-in 0.4s ease forwards;
+        }
+        .step-item.right {
+            transform: translateX(20px);
+        }
+        @keyframes slide-in {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* === 传统侧暗色卡片 === */
+        .card-traditional {
+            background: linear-gradient(145deg, #1e1e2e, #252540);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.3s ease;
+        }
+        .card-traditional:hover {
+            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.08);
+        }
+
+        /* === 助手侧亮色卡片 === */
+        .card-assistant {
+            background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card-assistant:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+        }
+
+        /* === 统计数字动画 === */
+        .stat-number {
+            font-weight: 900; font-size: 2.5rem;
+            line-height: 1;
+        }
+        .stat-glow {
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        /* === 场景切换动画 === */
+        .scene-panel {
+            animation: fade-up 0.5s ease forwards;
+        }
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === 痛点/亮点标签 === */
+        .pain-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+            background: rgba(239, 68, 68, 0.1); color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .highlight-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+            background: rgba(34, 197, 94, 0.1); color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        /* === 进度条 === */
+        .progress-bar {
+            height: 8px; border-radius: 4px; overflow: hidden;
+            background: rgba(255,255,255,0.06);
+        }
+        .progress-fill {
+            height: 100%; border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        /* === 编辑提示 === */
+        [contenteditable="true"] {
+            outline: none; border-radius: 4px;
+            transition: box-shadow 0.2s;
+        }
+        [contenteditable="true"]:focus {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+        }
+        [contenteditable="true"]:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* === 响应式 === */
+        @media (max-width: 768px) {
+            .vs-glow { width: 52px; height: 52px; }
+            .vs-text { font-size: 14px; }
+            .stat-number { font-size: 1.8rem; }
+        }
+
+        /* === 滚动条 === */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+
+        /* === 连接线 === */
+        .connector-line {
+            width: 2px; min-height: 100%;
+            background: linear-gradient(to bottom, rgba(99,102,241,0.3), rgba(139,92,246,0.1));
+            position: absolute; left: 50%; transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+
+    <!-- 背景粒子 -->
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- 主内容 -->
+    <div class="relative z-10">
+
+        <!-- 顶部标题区 -->
+        <header class="relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-purple-900/20 to-pink-900/20"></div>
+            <div class="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+
+            <div class="relative max-w-6xl mx-auto px-4 py-12 md:py-16 text-center">
+                <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm text-gray-300 mb-6">
+                    <i class="fa fa-bolt text-yellow-400"></i>
+                    <span>效率提升数据可视化</span>
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black mb-4 leading-tight">
+                    <span class="text-gray-300">传统方法</span>
+                    <span class="mx-2 text-yellow-400">VS</span>
+                    <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">智能助手</span>
+                </h1>
+                <p class="text-gray-400 text-base md:text-lg max-w-2xl mx-auto">
+                    基于真实业务场景，对比传统手工操作与智能平台的核心差异
+                </p>
+            </div>
+        </header>
+
+        <!-- Tab 切换 -->
+        <div class="max-w-6xl mx-auto px-4 mb-8">
+            <div class="relative flex bg-white/5 border border-white/10 rounded-xl p-1.5" id="tab-bar">
+                <div class="tab-slider" id="tab-slider"></div>
+                <!-- Tabs 由 JS 渲染 -->
+            </div>
+        </div>
+
+        <!-- 对比区域 -->
+        <div class="max-w-6xl mx-auto px-4 pb-8" id="comparison-area">
+            <!-- 由 JS 动态渲染 -->
+        </div>
+
+        <!-- 底部总结 -->
+        <div class="max-w-6xl mx-auto px-4 pb-16" id="summary-area">
+            <!-- 由 JS 动态渲染 -->
+        </div>
+
+    </div>
+
+    <script>
+    // ========================================
+    // 数据配置（所有内容在此修改）
+    // ========================================
+    const scenarios = [
+        {
+            id: 'account-review',
+            title: '坐班主任核查账户',
+            icon: 'fa-user-shield',
+            emoji: '🔍',
+            traditional: {
+                label: '传统方法',
+                icon: 'fa-file-text-o',
+                time: '30-60分钟/户',
+                accuracy: 65,
+                steps: [
+                    '登录核心系统，逐项查询客户基本信息',
+                    '手工记录客户余额、开户日期、职业等字段',
+                    '切换到反洗钱系统，查询风险评级和名单状态',
+                    '切换到信贷系统，查询贷款余额和逾期情况',
+                    '打开Excel，手工整理各系统数据',
+                    '人工比对分析，撰写核查报告'
+                ],
+                painPoints: [
+                    '需要在 4-5 个系统间反复切换',
+                    '手工抄录容易出错，漏项率高',
+                    '无法快速定位异常账户',
+                    '核查报告格式不统一'
+                ]
+            },
+            assistant: {
+                label: '智能助手',
+                icon: 'fa-rocket',
+                time: '2-5分钟/户',
+                accuracy: 97,
+                steps: [
+                    '输入客户姓名或证件号，一键查询',
+                    '系统自动聚合所有系统数据，一键展示',
+                    '风险标签、余额、交易特征实时高亮',
+                    '21项特征自动计算，结果即时呈现',
+                    '雷达图 + 交易明细，异常一目了然',
+                    '一键导出标准化核查报告'
+                ],
+                highlights: [
+                    '一个页面完成全量数据查询',
+                    '智能风险识别，准确率 97%',
+                    '特征自动计算，零手工操作',
+                    '报告自动生成，格式统一'
+                ]
+            }
+        },
+        {
+            id: 'transaction-analysis',
+            title: '柜面交易流水分析',
+            icon: 'fa-exchange',
+            emoji: '📊',
+            traditional: {
+                label: '传统方法',
+                icon: 'fa-file-text-o',
+                time: '45-90分钟/户',
+                accuracy: 55,
+                steps: [
+                    '从核心系统导出交易流水（Excel）',
+                    '手工筛选特定时间段、特定金额的交易',
+                    '逐笔核对借贷方向、对手方信息',
+                    '在Excel中用公式统计交易频次和金额',
+                    '手工判断是否存在异常模式',
+                    '整理分析结果，撰写异常交易报告'
+                ],
+                painPoints: [
+                    '数据量大时 Excel 容易卡顿崩溃',
+                    '手工筛选规则难以覆盖复杂场景',
+                    '缺少对手方关联分析能力',
+                    '统计口径不一致，结果偏差大'
+                ]
+            },
+            assistant: {
+                label: '智能助手',
+                icon: 'fa-rocket',
+                time: '1-3分钟/户',
+                accuracy: 96,
+                steps: [
+                    '选中客户后，交易明细自动加载',
+                    '按金额/时间/对手方多维筛选，实时过滤',
+                    '交易频次、金额分布自动统计图表展示',
+                    '陌生对手方自动标记，关联风险提示',
+                    '异常交易模式智能识别并高亮',
+                    '一键生成交易分析报告'
+                ],
+                highlights: [
+                    '实时多维筛选，毫秒级响应',
+                    '可视化图表，趋势一目了然',
+                    '智能识别陌生对手和异常模式',
+                    '分析维度覆盖 9 大字段'
+                ]
+            }
+        },
+        {
+            id: 'risk-judgment',
+            title: '风险判断',
+            icon: 'fa-shield',
+            emoji: '⚠️',
+            traditional: {
+                label: '传统方法',
+                icon: 'fa-file-text-o',
+                time: '1-3小时/户',
+                accuracy: 50,
+                steps: [
+                    '收集客户全量信息（跨多个系统）',
+                    '对照反洗钱风险评级标准逐项评估',
+                    '人工分析交易流水中的可疑特征',
+                    '参照历史案例和经验进行主观判断',
+                    '撰写风险评估意见书',
+                    '提交主管审批，可能被打回修改'
+                ],
+                painPoints: [
+                    '依赖个人经验，标准不统一',
+                    '信息分散，难以全局把握',
+                    '主观判断偏差大，误判率高',
+                    '审批流程长，效率低下'
+                ]
+            },
+            assistant: {
+                label: '智能助手',
+                icon: 'fa-rocket',
+                time: '5-10分钟/户',
+                accuracy: 98,
+                steps: [
+                    '系统自动聚合客户全维度数据',
+                    '21项特征指标自动计算并评分',
+                    '雷达图展示风险画像，直观判断',
+                    '对标反洗钱标准，智能风险分级',
+                    '风险标签自动标注（高风险/中风险/低风险）',
+                    '一键生成标准化评估报告'
+                ],
+                highlights: [
+                    '量化评分，标准统一客观',
+                    '雷达图风险画像，一目了然',
+                    '对标监管标准，自动分级',
+                    '报告自动生成，审批效率翻倍'
+                ]
+            }
+        }
+    ];
+
+    // ========================================
+    // 渲染逻辑
+    // ========================================
+    let currentScene = 0;
+
+    function initParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 4 + 2;
+            const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#ec4899', '#3b82f6'];
+            p.style.cssText = `
+                width: ${size}px; height: ${size}px;
+                left: ${Math.random() * 100}%;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                animation-duration: ${Math.random() * 15 + 10}s;
+                animation-delay: ${Math.random() * 10}s;
+            `;
+            container.appendChild(p);
+        }
+    }
+
+    function renderTabs() {
+        const bar = document.getElementById('tab-bar');
+        // 清除旧 tabs（保留 slider）
+        const slider = document.getElementById('tab-slider');
+        bar.innerHTML = '';
+        bar.appendChild(slider);
+
+        scenarios.forEach((s, i) => {
+            const tab = document.createElement('button');
+            tab.className = `relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-lg text-sm md:text-base font-semibold transition-all duration-300 ${
+                i === currentScene ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+            }`;
+            tab.innerHTML = `<i class="fa ${s.icon}"></i><span class="hidden sm:inline">${s.title}</span><span class="sm:hidden">${s.emoji}</span>`;
+            tab.onclick = () => switchScene(i);
+            bar.appendChild(tab);
+        });
+
+        updateSlider();
+    }
+
+    function updateSlider() {
+        const bar = document.getElementById('tab-bar');
+        const tabs = bar.querySelectorAll('button');
+        const slider = document.getElementById('tab-slider');
+        if (tabs[currentScene]) {
+            const tab = tabs[currentScene];
+            slider.style.left = tab.offsetLeft + 4 + 'px';
+            slider.style.width = tab.offsetWidth - 8 + 'px';
+        }
+    }
+
+    function switchScene(index) {
+        if (index === currentScene) return;
+        currentScene = index;
+        renderTabs();
+        renderComparison();
+    }
+
+    function renderComparison() {
+        const area = document.getElementById('comparison-area');
+        const s = scenarios[currentScene];
+
+        const leftStepsHtml = s.traditional.steps.map((step, i) => `
+            <div class="step-item flex items-start gap-3 group" style="animation-delay: ${i * 0.08}s">
+                <div class="flex-shrink-0 w-7 h-7 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-xs font-bold mt-0.5">${i + 1}</div>
+                <p class="text-gray-300 text-sm leading-relaxed group-hover:text-gray-100 transition-colors" contenteditable="true">${step}</p>
+            </div>
+        `).join('');
+
+        const rightStepsHtml = s.assistant.steps.map((step, i) => `
+            <div class="step-item right flex items-start gap-3 group" style="animation-delay: ${i * 0.08}s">
+                <div class="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xs font-bold mt-0.5">${i + 1}</div>
+                <p class="text-gray-200 text-sm leading-relaxed group-hover:text-white transition-colors" contenteditable="true">${step}</p>
+            </div>
+        `).join('');
+
+        const painHtml = s.traditional.painPoints.map(p => `
+            <span class="pain-tag"><i class="fa fa-times-circle text-red-400 text-xs"></i><span contenteditable="true">${p}</span></span>
+        `).join('');
+
+        const highlightHtml = s.assistant.highlights.map(h => `
+            <span class="highlight-tag"><i class="fa fa-check-circle text-green-400 text-xs"></i><span contenteditable="true">${h}</span></span>
+        `).join('');
+
+        area.innerHTML = `
+            <div class="scene-panel">
+                <!-- 场景标题 -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center gap-2 text-indigo-400 text-sm font-medium mb-2">
+                        <i class="fa ${s.icon}"></i>
+                        <span contenteditable="true">场景 ${currentScene + 1}</span>
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white" contenteditable="true">${s.title}</h2>
+                </div>
+
+                <!-- 对比主体 -->
+                <div class="flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
+                    <!-- 传统方法 -->
+                    <div class="flex-1 card-traditional rounded-2xl p-6 md:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                                <i class="fa ${s.traditional.icon} text-red-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-200 text-lg" contenteditable="true">${s.traditional.label}</h3>
+                                <p class="text-xs text-gray-500">手工操作</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            ${leftStepsHtml}
+                        </div>
+
+                        <div class="border-t border-white/5 pt-4">
+                            <p class="text-xs text-gray-500 mb-2 font-medium"><i class="fa fa-exclamation-triangle text-red-400 mr-1"></i> 核心痛点</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${painHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VS 分隔 -->
+                    <div class="flex items-center justify-center py-4 md:py-0">
+                        <div class="vs-glow">
+                            <span class="vs-text">VS</span>
+                        </div>
+                    </div>
+
+                    <!-- 智能助手 -->
+                    <div class="flex-1 card-assistant rounded-2xl p-6 md:p-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
+                                <i class="fa ${s.assistant.icon} text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-lg" contenteditable="true">${s.assistant.label}</h3>
+                                <p class="text-xs text-indigo-400/60">智能平台</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-6">
+                            ${rightStepsHtml}
+                        </div>
+
+                        <div class="border-t border-indigo-500/10 pt-4">
+                            <p class="text-xs text-indigo-400/60 mb-2 font-medium"><i class="fa fa-star text-yellow-400 mr-1"></i> 核心优势</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${highlightHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSummary() {
+        const area = document.getElementById('summary-area');
+        const s = scenarios[currentScene];
+
+        const tradTime = s.traditional.time;
+        const astTime = s.assistant.time;
+        const timeImprove = Math.round((1 - parseTime(astTime) / parseTime(tradTime)) * 100);
+        const accImprove = s.assistant.accuracy - s.traditional.accuracy;
+
+        area.innerHTML = `
+            <div class="scene-panel">
+                <div class="bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-2xl p-6 md:p-8">
+                    <h3 class="text-center text-lg font-bold text-white mb-8">
+                        <i class="fa fa-bar-chart mr-2 text-indigo-400"></i>
+                        效率提升对比
+                    </h3>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                        <!-- 传统耗时 -->
+                        <div class="text-center">
+                            <div class="stat-number text-gray-500 stat-glow" style="color: #6b7280;" contenteditable="true">${tradTime}</div>
+                            <div class="text-xs text-gray-500 mt-2">传统方法耗时</div>
+                            <div class="progress-bar mt-3">
+                                <div class="progress-fill bg-gray-600" style="width: ${s.traditional.accuracy}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">准确率 ${s.traditional.accuracy}%</div>
+                        </div>
+
+                        <!-- 助手耗时 -->
+                        <div class="text-center">
+                            <div class="stat-number text-indigo-400 stat-glow" contenteditable="true">${astTime}</div>
+                            <div class="text-xs text-gray-500 mt-2">智能助手耗时</div>
+                            <div class="progress-bar mt-3">
+                                <div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width: ${s.assistant.accuracy}%"></div>
+                            </div>
+                            <div class="text-xs text-indigo-400/60 mt-1">准确率 ${s.assistant.accuracy}%</div>
+                        </div>
+
+                        <!-- 时间节省 -->
+                        <div class="text-center">
+                            <div class="stat-number text-emerald-400 stat-glow" style="color: #34d399;" contenteditable="true">${timeImprove}%</div>
+                            <div class="text-xs text-gray-500 mt-2">时间节省</div>
+                            <div class="w-full h-8 flex items-center justify-center mt-3">
+                                <div class="flex gap-0.5">
+                                    ${Array(Math.min(Math.floor(timeImprove / 8), 10)).fill(0).map((_, i) =>
+                                        `<div class="w-2 h-${Math.floor(Math.random() * 4 + 4)} bg-emerald-500/60 rounded-sm" style="height: ${Math.floor(Math.random() * 16 + 8)}px; animation-delay: ${i * 0.1}s"></div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 准确率提升 -->
+                        <div class="text-center">
+                            <div class="stat-number text-yellow-400 stat-glow" style="color: #fbbf24;" contenteditable="true">+${accImprove}%</div>
+                            <div class="text-xs text-gray-500 mt-2">准确率提升</div>
+                            <div class="w-full h-8 flex items-center justify-center mt-3">
+                                <i class="fa fa-arrow-trend-up text-2xl text-yellow-400/60"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 解析时间字符串为分钟数（用于计算提升百分比）
+    function parseTime(str) {
+        const nums = str.match(/[\d.]+/g);
+        if (!nums || nums.length === 0) return 60;
+        return parseFloat(nums[0]);
+    }
+
+    // 初始化
+    function init() {
+        initParticles();
+        renderTabs();
+        renderComparison();
+        renderSummary();
+
+        // 窗口尺寸变化时更新 slider
+        window.addEventListener('resize', updateSlider);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
