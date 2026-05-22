@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全流程图 - 传统方法 VS 智能助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            margin: 0; background: #0a0a1a; color: #e5e7eb; overflow-x: hidden;
+        }
+
+        /* ===== 背景粒子 ===== */
+        .bg-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .particle { position: absolute; border-radius: 50%; opacity: 0.15; animation: float linear infinite; }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.15; } 90% { opacity: 0.15; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* ===== Tab 滑块 ===== */
+        .tab-slider {
+            position: absolute; bottom: 0; height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+            border-radius: 3px 3px 0 0;
+            transition: left 0.4s cubic-bezier(0.4,0,0.2,1), width 0.4s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 0 12px rgba(139,92,246,0.5);
+        }
+
+        /* ===== 时间线 ===== */
+        .timeline { position: relative; }
+        .timeline::before {
+            content: ''; position: absolute; top: 0; bottom: 0; width: 2px;
+            left: 24px; transform: translateX(-50%);
+        }
+        .timeline.traditional::before {
+            background: linear-gradient(to bottom, rgba(239,68,68,0.4), rgba(239,68,68,0.05));
+        }
+        .timeline.assistant::before {
+            background: linear-gradient(to bottom, rgba(99,102,241,0.4), rgba(139,92,246,0.05));
+        }
+
+        /* ===== 流程节点 ===== */
+        .flow-node {
+            position: relative; display: flex; align-items: flex-start; gap: 20px;
+            padding: 0 0 40px 0; opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .flow-node.visible { opacity: 1; transform: translateY(0); }
+        .flow-node.visible:nth-child(1) { transition-delay: 0s; }
+        .flow-node.visible:nth-child(2) { transition-delay: 0.12s; }
+        .flow-node.visible:nth-child(3) { transition-delay: 0.24s; }
+        .flow-node.visible:nth-child(4) { transition-delay: 0.36s; }
+        .flow-node.visible:nth-child(5) { transition-delay: 0.48s; }
+        .flow-node.visible:nth-child(6) { transition-delay: 0.6s; }
+        .flow-node.visible:nth-child(7) { transition-delay: 0.72s; }
+
+        .node-dot {
+            flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px; z-index: 2;
+            position: relative; transition: all 0.3s ease;
+        }
+        .node-dot.traditional {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 2px solid rgba(239,68,68,0.4);
+            color: #f87171;
+        }
+        .node-dot.assistant {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: 2px solid rgba(99,102,241,0.6);
+            color: #e0e7ff;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3);
+        }
+
+        /* 节点脉冲光效 */
+        .node-dot::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            border: 2px solid transparent; animation: dot-pulse 2.5s ease-in-out infinite;
+        }
+        .node-dot.traditional::after { border-color: rgba(239,68,68,0.2); }
+        .node-dot.assistant::after { border-color: rgba(99,102,241,0.3); }
+        @keyframes dot-pulse {
+            0%,100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0; }
+        }
+
+        .node-card {
+            flex: 1; border-radius: 16px; padding: 20px 24px;
+            transition: all 0.3s ease; cursor: default; position: relative; overflow: hidden;
+        }
+        .node-card::before {
+            content: ''; position: absolute; inset: 0; border-radius: 16px;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .node-card:hover { transform: translateX(4px); }
+
+        .node-card.traditional {
+            background: linear-gradient(145deg, #1e1e2e, #252540);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .node-card.traditional:hover {
+            border-color: rgba(239,68,68,0.3);
+            box-shadow: 0 0 25px rgba(239,68,68,0.08), inset 0 0 30px rgba(239,68,68,0.03);
+        }
+        .node-card.assistant {
+            background: linear-gradient(145deg, rgba(99,102,241,0.1), rgba(139,92,246,0.06));
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+        .node-card.assistant:hover {
+            border-color: rgba(99,102,241,0.5);
+            box-shadow: 0 0 30px rgba(99,102,241,0.15), inset 0 0 30px rgba(99,102,241,0.05);
+        }
+
+        /* ===== SVG 连线动画 ===== */
+        .flow-line { stroke-dasharray: 8 6; animation: dash-flow 1.2s linear infinite; }
+        .flow-line.traditional { stroke: rgba(239,68,68,0.35); }
+        .flow-line.assistant { stroke: rgba(99,102,241,0.4); }
+        @keyframes dash-flow { to { stroke-dashoffset: -28; } }
+
+        /* ===== 中间 VS 动画 ===== */
+        .vs-badge {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            width: 60px; height: 60px; flex-shrink: 0;
+        }
+        .vs-badge::before {
+            content: ''; position: absolute; width: 100%; height: 100%;
+            border-radius: 50%; background: linear-gradient(135deg, #6366f1, #ec4899);
+            animation: vs-pulse 2.5s ease-in-out infinite;
+        }
+        .vs-badge::after {
+            content: ''; position: absolute; width: 82%; height: 82%;
+            border-radius: 50%; background: #0a0a1a;
+        }
+        .vs-badge span {
+            position: relative; z-index: 1; font-weight: 900; font-size: 16px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        @keyframes vs-pulse {
+            0%,100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.3); opacity: 0.15; }
+        }
+
+        /* ===== 统计数字 ===== */
+        .stat-number { font-weight: 900; font-size: 2.5rem; line-height: 1; }
+        .stat-glow { text-shadow: 0 0 20px currentColor; }
+
+        .progress-bar {
+            width: 100%; height: 6px; border-radius: 3px;
+            background: rgba(255,255,255,0.05); overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 3px;
+            transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* ===== 场景切换 ===== */
+        .flow-container { animation: fade-slide 0.5s ease; }
+        @keyframes fade-slide {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== 中间对比箭头 ===== */
+        .compare-arrow {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            animation: arrow-bounce 1.5s ease-in-out infinite;
+            color: rgba(139,92,246,0.4); font-size: 24px;
+        }
+        @keyframes arrow-bounce {
+            0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.4; }
+            50% { transform: translate(-50%,-50%) scale(1.15); opacity: 0.7; }
+        }
+
+        /* ===== 起止节点 ===== */
+        .endpoint {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 16px 28px; border-radius: 50px; font-weight: 700; font-size: 15px;
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .endpoint.visible { opacity: 1; transform: translateY(0); }
+        .endpoint.start {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white; box-shadow: 0 0 25px rgba(16,185,129,0.25);
+        }
+        .endpoint.end.trad {
+            background: linear-gradient(135deg, #991b1b, #dc2626);
+            color: white; box-shadow: 0 0 20px rgba(239,68,68,0.2);
+        }
+        .endpoint.end.assist {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white; box-shadow: 0 0 25px rgba(99,102,241,0.3);
+        }
+
+        /* ===== 工具栏 ===== */
+        .toolbar {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toolbar-btn {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 18px; transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .toolbar-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(0,0,0,0.4); }
+        .toolbar-btn.save { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .toolbar-btn.upload { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .toolbar-btn.reset { background: rgba(255,255,255,0.06); color: #9ca3af; }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 500;
+            z-index: 200; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: linear-gradient(135deg, #065f46, #064e3b); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .toast.info { background: linear-gradient(135deg, #312e81, #3730a3); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+
+        .edit-hint {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: linear-gradient(90deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9));
+            color: white; text-align: center; padding: 8px;
+            font-size: 13px; font-weight: 500; z-index: 150;
+            transform: translateY(-100%); transition: transform 0.3s ease;
+        }
+        .edit-hint.show { transform: translateY(0); }
+
+        /* ===== 标签 ===== */
+        .tag-trad { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #fca5a5; border-radius: 8px; padding: 3px 10px; font-size: 12px; }
+        .tag-assist { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: #a5b4fc; border-radius: 8px; padding: 3px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- 编辑提示 -->
+    <div class="edit-hint" id="edit-hint">
+        <i class="fa fa-edit"></i> 编辑模式已开启 — 点击页面上的文字即可修改
+    </div>
+
+    <!-- Toast -->
+    <div class="toast success" id="toast"><i class="fa fa-check-circle"></i><span id="toast-text"></span></div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <button class="toolbar-btn save" onclick="saveAndDownload()" title="保存为HTML"><i class="fa fa-download"></i></button>
+        <button class="toolbar-btn upload" onclick="saveAndUpload()" title="上传到GitHub"><i class="fa fa-cloud-upload"></i></button>
+        <button class="toolbar-btn reset" onclick="resetPage()" title="撤销修改"><i class="fa fa-undo"></i></button>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 标题 -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-black text-white mb-3" contenteditable="true">
+                <i class="fa fa-sitemap mr-3 text-indigo-400"></i>全流程图
+            </h1>
+            <p class="text-gray-400 text-sm md:text-base">传统方法 VS 智能助手 — 操作流程全景对比</p>
+        </div>
+
+        <!-- Tab 切换 -->
+        <div class="relative bg-white/[0.03] border border-white/10 rounded-2xl p-1.5 mb-10 flex" id="tab-bar">
+            <div class="tab-slider" id="tab-slider"></div>
+        </div>
+
+        <!-- 流程图容器 -->
+        <div id="flow-area"></div>
+
+        <!-- 底部统计 -->
+        <div id="summary-area" class="mt-12"></div>
+    </div>
+
+    <script>
+    // ========================================
+    // 场景数据
+    // ========================================
+    const scenarios = [
+        {
+            title: '坐班主任核查账户',
+            icon: 'fa-user-circle-o',
+            traditional: {
+                label: '传统方法', time: '30-60分钟/户', accuracy: 60,
+                steps: [
+                    '登录核心系统，逐项查询客户基本信息',
+                    '手工记录客户余额、开户日期、职业等字段',
+                    '切换到反洗钱系统查询客户风险等级',
+                    '在信贷系统中查找贷款和担保信息',
+                    '对照反洗钱名单手工逐条比对',
+                    '整理所有信息，手工撰写核查报告'
+                ]
+            },
+            assistant: {
+                label: '智能助手', time: '3-5分钟/户', accuracy: 98,
+                steps: [
+                    '一键输入客户账号，系统自动聚合全维数据',
+                    '21项特征指标实时计算并自动评分',
+                    '雷达图展示客户画像，风险一目了然',
+                    '反洗钱名单自动比对，命中即时高亮',
+                    '异常指标智能标注，给出风险提示',
+                    '一键生成标准化核查报告，可直接导出'
+                ]
+            }
+        },
+        {
+            title: '柜面交易流水分析',
+            icon: 'fa-exchange',
+            traditional: {
+                label: '传统方法', time: '2-4小时/户', accuracy: 55,
+                steps: [
+                    '导出客户全量交易流水（通常数万条）',
+                    '用 Excel 按金额、频率等字段逐列筛选',
+                    '肉眼识别大额转账和频繁交易模式',
+                    '对照客户画像判断交易是否异常',
+                    '手工制作分析图表，整理报告'
+                ]
+            },
+            assistant: {
+                label: '智能助手', time: '5-10分钟/户', accuracy: 97,
+                steps: [
+                    '系统自动加载全量交易数据',
+                    '多维筛选面板，支持金额/频率/时段组合过滤',
+                    '陌生对手方自动标记，关联风险提示',
+                    '异常交易模式智能识别并高亮',
+                    '一键生成交易分析报告'
+                ]
+            }
+        },
+        {
+            title: '风险判断',
+            icon: 'fa-shield',
+            traditional: {
+                label: '传统方法', time: '1-3小时/户', accuracy: 50,
+                steps: [
+                    '收集客户全量信息（跨多个系统）',
+                    '对照反洗钱风险评级标准逐项评估',
+                    '人工分析交易流水中的可疑特征',
+                    '参照历史案例和经验进行主观判断',
+                    '撰写风险评估意见书',
+                    '提交主管审批，可能被打回修改'
+                ]
+            },
+            assistant: {
+                label: '智能助手', time: '5-10分钟/户', accuracy: 98,
+                steps: [
+                    '系统自动聚合客户全维度数据',
+                    '21项特征指标自动计算并评分',
+                    '雷达图展示风险画像，直观判断',
+                    '对标反洗钱标准，智能风险分级',
+                    '风险标签自动标注（高风险/中风险/低风险）',
+                    '一键生成标准化评估报告'
+                ]
+            }
+        }
+    ];
+
+    let currentScene = 0;
+
+    // ========================================
+    // 粒子背景
+    // ========================================
+    function initParticles() {
+        const c = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 4 + 2;
+            const colors = ['#6366f1','#8b5cf6','#a855f7','#ec4899','#3b82f6'];
+            p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*10}s;`;
+            c.appendChild(p);
+        }
+    }
+
+    // ========================================
+    // Tab 渲染
+    // ========================================
+    function renderTabs() {
+        const bar = document.getElementById('tab-bar');
+        const slider = document.getElementById('tab-slider');
+        bar.innerHTML = '';
+        bar.appendChild(slider);
+
+        scenarios.forEach((s, i) => {
+            const btn = document.createElement('button');
+            btn.className = `relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-sm md:text-base font-semibold transition-all duration-300 ${i === currentScene ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`;
+            btn.innerHTML = `<i class="fa ${s.icon}"></i><span>${s.title}</span>`;
+            btn.onclick = () => switchScene(i);
+            bar.appendChild(btn);
+        });
+
+        requestAnimationFrame(() => updateSlider());
+    }
+
+    function updateSlider() {
+        const bar = document.getElementById('tab-bar');
+        const btns = bar.querySelectorAll('button');
+        const slider = document.getElementById('tab-slider');
+        if (!btns[currentScene]) return;
+        const btn = btns[currentScene];
+        slider.style.left = btn.offsetLeft + 'px';
+        slider.style.width = btn.offsetWidth + 'px';
+    }
+
+    function switchScene(i) {
+        currentScene = i;
+        renderTabs();
+        renderFlowchart();
+        renderSummary();
+    }
+
+    // ========================================
+    // 流程图渲染
+    // ========================================
+    function renderFlowchart() {
+        const area = document.getElementById('flow-area');
+        const s = scenarios[currentScene];
+
+        const maxSteps = Math.max(s.traditional.steps.length, s.assistant.steps.length);
+
+        let html = `<div class="flow-container">`;
+
+        // 起始节点
+        html += `
+        <div class="flex justify-center mb-10">
+            <div class="endpoint start" data-animate>
+                <i class="fa fa-play"></i>
+                <span contenteditable="true">任务开始</span>
+            </div>
+        </div>`;
+
+        // 双通道流程
+        html += `<div class="flex flex-col md:flex-row gap-8 md:gap-4 relative">`;
+
+        // 左侧：传统方法
+        html += `
+        <div class="flex-1">
+            <div class="flex items-center gap-3 mb-6 pl-2">
+                <div class="w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/40"></div>
+                <h3 class="font-bold text-lg text-gray-200" contenteditable="true">${s.traditional.label}</h3>
+                <span class="tag-trad" contenteditable="true">${s.traditional.time}</span>
+            </div>
+            <div class="timeline traditional pl-1">
+                ${s.traditional.steps.map((step, i) => `
+                <div class="flow-node" data-animate>
+                    <div class="node-dot traditional">${i + 1}</div>
+                    <div class="node-card traditional">
+                        <p class="text-gray-300 text-sm leading-relaxed" contenteditable="true">${step}</p>
+                        <div class="mt-2 text-xs text-gray-600">步骤 ${i + 1} / ${s.traditional.steps.length}</div>
+                    </div>
+                    ${i < s.traditional.steps.length - 1 ? `<svg class="absolute left-[23px] top-[52px] w-2 h-10" style="overflow:visible"><line x1="0" y1="0" x2="0" y2="40" class="flow-line traditional" stroke-width="2" stroke-linecap="round"/></svg>` : ''}
+                </div>
+                `).join('')}
+            </div>
+            <div class="flex justify-center mt-4">
+                <div class="endpoint end trad" data-animate>
+                    <i class="fa fa-flag-checkered"></i>
+                    <span contenteditable="true">手工完成</span>
+                </div>
+            </div>
+        </div>`;
+
+        // 中间 VS 分隔
+        html += `
+        <div class="hidden md:flex items-center justify-center flex-shrink-0 px-2 relative" style="min-height:200px;">
+            <div class="vs-badge"><span>VS</span></div>
+            <div class="compare-arrow"><i class="fa fa-arrows-h"></i></div>
+        </div>`;
+
+        // 右侧：智能助手
+        html += `
+        <div class="flex-1">
+            <div class="flex items-center gap-3 mb-6 pl-2">
+                <div class="w-3 h-3 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/40"></div>
+                <h3 class="font-bold text-lg text-white" contenteditable="true">${s.assistant.label}</h3>
+                <span class="tag-assist" contenteditable="true">${s.assistant.time}</span>
+            </div>
+            <div class="timeline assistant pl-1">
+                ${s.assistant.steps.map((step, i) => `
+                <div class="flow-node" data-animate>
+                    <div class="node-dot assistant">${i + 1}</div>
+                    <div class="node-card assistant">
+                        <p class="text-gray-200 text-sm leading-relaxed" contenteditable="true">${step}</p>
+                        <div class="mt-2 text-xs text-indigo-400/50">步骤 ${i + 1} / ${s.assistant.steps.length}</div>
+                    </div>
+                    ${i < s.assistant.steps.length - 1 ? `<svg class="absolute left-[23px] top-[52px] w-2 h-10" style="overflow:visible"><line x1="0" y1="0" x2="0" y2="40" class="flow-line assistant" stroke-width="2" stroke-linecap="round"/></svg>` : ''}
+                </div>
+                `).join('')}
+            </div>
+            <div class="flex justify-center mt-4">
+                <div class="endpoint end assist" data-animate>
+                    <i class="fa fa-rocket"></i>
+                    <span contenteditable="true">智能完成</span>
+                </div>
+            </div>
+        </div>`;
+
+        html += `</div></div>`;
+
+        area.innerHTML = html;
+
+        // 触发入场动画
+        requestAnimationFrame(() => {
+            const nodes = area.querySelectorAll('[data-animate]');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15 });
+            nodes.forEach(n => observer.observe(n));
+        });
+    }
+
+    // ========================================
+    // 底部统计
+    // ========================================
+    function renderSummary() {
+        const area = document.getElementById('summary-area');
+        const s = scenarios[currentScene];
+        const tTime = parseTime(s.traditional.time);
+        const aTime = parseTime(s.assistant.time);
+        const timeImprove = Math.round((1 - aTime / tTime) * 100);
+        const accImprove = s.assistant.accuracy - s.traditional.accuracy;
+
+        area.innerHTML = `
+        <div class="bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-2xl p-6 md:p-8">
+            <h3 class="text-center text-lg font-bold text-white mb-8">
+                <i class="fa fa-bar-chart mr-2 text-indigo-400"></i>
+                效率提升对比
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="stat-number text-gray-500 stat-glow" style="color:#6b7280;">${s.traditional.time}</div>
+                    <div class="text-xs text-gray-500 mt-2">传统方法耗时</div>
+                    <div class="progress-bar mt-3"><div class="progress-fill bg-gray-600" style="width:${s.traditional.accuracy}%"></div></div>
+                    <div class="text-xs text-gray-600 mt-1">准确率 ${s.traditional.accuracy}%</div>
+                </div>
+                <div class="text-center">
+                    <div class="stat-number text-indigo-400 stat-glow">${s.assistant.time}</div>
+                    <div class="text-xs text-gray-500 mt-2">智能助手耗时</div>
+                    <div class="progress-bar mt-3"><div class="progress-fill bg-gradient-to-r from-indigo-500 to-purple-500" style="width:${s.assistant.accuracy}%"></div></div>
+                    <div class="text-xs text-indigo-400/60 mt-1">准确率 ${s.assistant.accuracy}%</div>
+                </div>
+                <div class="text-center">
+                    <div class="stat-number stat-glow" style="color:#34d399;">${timeImprove}%</div>
+                    <div class="text-xs text-gray-500 mt-2">时间节省</div>
+                    <div class="w-full h-8 flex items-center justify-center mt-3">
+                        <i class="fa fa-arrow-trend-up text-2xl text-emerald-400/60"></i>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="stat-number stat-glow" style="color:#fbbf24;">+${accImprove}%</div>
+                    <div class="text-xs text-gray-500 mt-2">准确率提升</div>
+                    <div class="w-full h-8 flex items-center justify-center mt-3">
+                        <i class="fa fa-trophy text-2xl text-yellow-400/60"></i>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function parseTime(str) {
+        const nums = str.match(/[\d.]+/g);
+        if (!nums || nums.length === 0) return 60;
+        return parseFloat(nums[0]);
+    }
+
+    // ========================================
+    // 编辑保存
+    // ========================================
+    function collectEdits() {
+        const s = scenarios[currentScene];
+        const area = document.getElementById('flow-area');
+
+        const tradLabel = area.querySelector('.timeline.traditional')?.closest('.flex-1')?.querySelector('h3[contenteditable]');
+        const astLabel = area.querySelector('.timeline.assistant')?.closest('.flex-1')?.querySelector('h3[contenteditable]');
+        if (tradLabel) s.traditional.label = tradLabel.textContent.trim();
+        if (astLabel) s.assistant.label = astLabel.textContent.trim();
+
+        const tradSteps = area.querySelectorAll('.timeline.traditional .node-card p[contenteditable]');
+        tradSteps.forEach((el, i) => { if (i < s.traditional.steps.length) s.traditional.steps[i] = el.textContent.trim(); });
+
+        const astSteps = area.querySelectorAll('.timeline.assistant .node-card p[contenteditable]');
+        astSteps.forEach((el, i) => { if (i < s.assistant.steps.length) s.assistant.steps[i] = el.textContent.trim(); });
+
+        const tradTags = area.querySelectorAll('.tag-trad[contenteditable]');
+        if (tradTags[0]) s.traditional.time = tradTags[0].textContent.trim();
+        const astTags = area.querySelectorAll('.tag-assist[contenteditable]');
+        if (astTags[0]) s.assistant.time = astTags[0].textContent.trim();
+
+        localStorage.setItem('flowchart_scenarios', JSON.stringify(scenarios));
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('flowchart_scenarios');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                parsed.forEach((s, i) => {
+                    if (scenarios[i]) {
+                        Object.assign(scenarios[i], s);
+                        if (s.traditional) Object.assign(scenarios[i].traditional, s.traditional);
+                        if (s.assistant) Object.assign(scenarios[i].assistant, s.assistant);
+                    }
+                });
+            } catch (e) {}
+        }
+    }
+
+    function showToast(text, type = 'success') {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-text').textContent = text;
+        t.className = `toast ${type} show`;
+        setTimeout(() => { t.classList.remove('show'); }, 3000);
+    }
+
+    function saveAndDownload() {
+        collectEdits();
+        showToast('正在生成文件...', 'info');
+        const ds = document.createElement('script');
+        ds.textContent = `window.__SAVED_SCENARIOS__=${JSON.stringify(scenarios)};`;
+        document.head.appendChild(ds);
+
+        const toolbar = document.querySelector('.toolbar');
+        const hint = document.getElementById('edit-hint');
+        const toast = document.getElementById('toast');
+        toolbar.style.display = 'none'; hint.style.display = 'none'; toast.style.display = 'none';
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        toolbar.style.display = ''; hint.style.display = ''; toast.style.display = '';
+        document.head.removeChild(ds);
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'flowchart.html'; document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(a.href);
+        showToast('文件已下载！替换原文件即可保存修改');
+    }
+
+    async function saveAndUpload() {
+        collectEdits();
+        showToast('正在上传...', 'info');
+        const ds = document.createElement('script');
+        ds.textContent = `window.__SAVED_SCENARIOS__=${JSON.stringify(scenarios)};`;
+        document.head.appendChild(ds);
+
+        const toolbar = document.querySelector('.toolbar');
+        const hint = document.getElementById('edit-hint');
+        const toast = document.getElementById('toast');
+        toolbar.style.display = 'none'; hint.style.display = 'none'; toast.style.display = 'none';
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        toolbar.style.display = ''; hint.style.display = ''; toast.style.display = '';
+        document.head.removeChild(ds);
+
+        try {
+            const base64 = btoa(unescape(encodeURIComponent(html)));
+            let sha = null;
+            try {
+                const r = await fetch('https://api.github.com/repos/781450632/bank-feature-platform/contents/flowchart.html?ref=main', {
+                    headers: { 'Authorization': 'token '+(window.__GH_TOKEN__||''), 'Accept': 'application/vnd.github+json' }
+                });
+                if (r.ok) sha = (await r.json()).sha;
+            } catch {}
+            const body = { message: 'Update flowchart.html', content: base64, branch: 'main' };
+            if (sha) body.sha = sha;
+            const resp = await fetch('https://api.github.com/repos/781450632/bank-feature-platform/contents/flowchart.html', {
+                method: 'PUT',
+                headers: { 'Authorization': 'token '+(window.__GH_TOKEN__||''), 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' },
+                body: JSON.stringify(body)
+            });
+            if (resp.ok) showToast('上传成功！');
+            else showToast('上传失败，请尝试下载方式');
+        } catch { showToast('网络错误'); }
+    }
+
+    function resetPage() {
+        if (confirm('确定撤销所有修改吗？')) { localStorage.removeItem('flowchart_scenarios'); location.reload(); }
+    }
+
+    // ========================================
+    // 初始化
+    // ========================================
+    function init() {
+        if (window.__SAVED_SCENARIOS__) {
+            window.__SAVED_SCENARIOS__.forEach((s, i) => {
+                if (scenarios[i]) {
+                    Object.assign(scenarios[i], s);
+                    if (s.traditional) Object.assign(scenarios[i].traditional, s.traditional);
+                    if (s.assistant) Object.assign(scenarios[i].assistant, s.assistant);
+                }
+            });
+        } else { loadSavedData(); }
+
+        initParticles();
+        renderTabs();
+        renderFlowchart();
+        renderSummary();
+        window.addEventListener('resize', updateSlider);
+
+        setTimeout(() => {
+            document.getElementById('edit-hint').classList.add('show');
+            setTimeout(() => document.getElementById('edit-hint').classList.remove('show'), 4000);
+        }, 1000);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
