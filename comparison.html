@@ -179,12 +179,93 @@
             background: linear-gradient(to bottom, rgba(99,102,241,0.3), rgba(139,92,246,0.1));
             position: absolute; left: 50%; transform: translateX(-50%);
         }
+
+        /* === 工具栏 === */
+        .toolbar {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toolbar-btn {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 18px; transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .toolbar-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        }
+        .toolbar-btn.save {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        .toolbar-btn.upload {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .toolbar-btn.reset {
+            background: rgba(255,255,255,0.06);
+            color: #9ca3af;
+        }
+
+        /* === Toast 提示 === */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 500;
+            z-index: 200; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background: linear-gradient(135deg, #065f46, #064e3b);
+            color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .toast.info {
+            background: linear-gradient(135deg, #312e81, #3730a3);
+            color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* === 编辑模式指示器 === */
+        .edit-hint {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: linear-gradient(90deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9));
+            color: white; text-align: center; padding: 8px;
+            font-size: 13px; font-weight: 500; z-index: 150;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+        .edit-hint.show { transform: translateY(0); }
     </style>
 </head>
 <body class="min-h-screen text-white">
 
     <!-- 背景粒子 -->
     <div class="bg-particles" id="particles"></div>
+
+    <!-- 编辑模式提示 -->
+    <div class="edit-hint" id="edit-hint">
+        <i class="fa fa-edit"></i> 编辑模式已开启 — 点击页面上的文字即可修改
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast success" id="toast-success"><i class="fa fa-check-circle"></i><span id="toast-text"></span></div>
+
+    <!-- 右下角工具栏 -->
+    <div class="toolbar">
+        <button class="toolbar-btn save" onclick="saveAndDownload()" title="保存为HTML文件">
+            <i class="fa fa-download"></i>
+        </button>
+        <button class="toolbar-btn upload" onclick="saveAndUpload()" title="保存并上传到GitHub">
+            <i class="fa fa-cloud-upload"></i>
+        </button>
+        <button class="toolbar-btn reset" onclick="resetPage()" title="撤销所有修改">
+            <i class="fa fa-undo"></i>
+        </button>
+    </div>
 
     <!-- 主内容 -->
     <div class="relative z-10">
@@ -607,15 +688,233 @@
         return parseFloat(nums[0]);
     }
 
+    // ========================================
+    // 从 DOM 提取编辑后的内容，回写到 scenarios
+    // ========================================
+    function collectEdits() {
+        const s = scenarios[currentScene];
+        const area = document.getElementById('comparison-area');
+        if (!area) return;
+
+        // 提取标题
+        const titleEl = area.querySelector('h2[contenteditable]');
+        if (titleEl) s.title = titleEl.textContent.trim();
+
+        // 提取传统方法标签
+        const tradLabelEl = area.querySelectorAll('h3[contenteditable]');
+        if (tradLabelEl[0]) s.traditional.label = tradLabelEl[0].textContent.trim();
+        if (tradLabelEl[1]) s.assistant.label = tradLabelEl[1].textContent.trim();
+
+        // 提取传统步骤
+        const tradSteps = area.querySelectorAll('.card-traditional .step-item p[contenteditable]');
+        tradSteps.forEach((el, i) => { if (i < s.traditional.steps.length) s.traditional.steps[i] = el.textContent.trim(); });
+
+        // 提取助手步骤
+        const astSteps = area.querySelectorAll('.card-assistant .step-item p[contenteditable]');
+        astSteps.forEach((el, i) => { if (i < s.assistant.steps.length) s.assistant.steps[i] = el.textContent.trim(); });
+
+        // 提取痛点
+        const pains = area.querySelectorAll('.pain-tag span[contenteditable]');
+        pains.forEach((el, i) => { if (i < s.traditional.painPoints.length) s.traditional.painPoints[i] = el.textContent.trim(); });
+
+        // 提取优势
+        const highs = area.querySelectorAll('.highlight-tag span[contenteditable]');
+        highs.forEach((el, i) => { if (i < s.assistant.highlights.length) s.assistant.highlights[i] = el.textContent.trim(); });
+
+        // 提取底部统计
+        const summary = document.getElementById('summary-area');
+        if (summary) {
+            const stats = summary.querySelectorAll('.stat-number[contenteditable]');
+            if (stats[0]) s.traditional.time = stats[0].textContent.trim();
+            if (stats[1]) s.assistant.time = stats[1].textContent.trim();
+            // stats[2] 时间节省 和 stats[3] 准确率提升 是计算值，不回写
+        }
+
+        // 保存到 localStorage
+        localStorage.setItem('comparison_scenarios', JSON.stringify(scenarios));
+    }
+
+    // 页面初始化时恢复保存的数据
+    function loadSavedData() {
+        const saved = localStorage.getItem('comparison_scenarios');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // 合并到 scenarios，保留缺失字段
+                parsed.forEach((s, i) => {
+                    if (scenarios[i]) {
+                        Object.assign(scenarios[i], s);
+                        if (s.traditional) Object.assign(scenarios[i].traditional, s.traditional);
+                        if (s.assistant) Object.assign(scenarios[i].assistant, s.assistant);
+                    }
+                });
+            } catch (e) {}
+        }
+    }
+
+    // ========================================
+    // 保存功能
+    // ========================================
+
+    function showToast(text, type = 'success') {
+        const toast = document.getElementById('toast-success');
+        const toastText = document.getElementById('toast-text');
+        toast.className = `toast ${type} show`;
+        toastText.textContent = text;
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    // 保存并下载HTML文件
+    function saveAndDownload() {
+        // 先从 DOM 收集所有编辑内容
+        collectEdits();
+        showToast('正在生成文件...', 'info');
+
+        // 将 scenarios 数据注入为脚本，让下载的文件能恢复数据
+        const dataScript = document.createElement('script');
+        dataScript.id = '__saved_data__';
+        dataScript.textContent = `window.__SAVED_SCENARIOS__ = ${JSON.stringify(scenarios)};`;
+        document.head.appendChild(dataScript);
+
+        // 临时移除工具栏和提示
+        const toolbar = document.querySelector('.toolbar');
+        const hint = document.getElementById('edit-hint');
+        const toast = document.getElementById('toast-success');
+        toolbar.style.display = 'none';
+        hint.style.display = 'none';
+        toast.style.display = 'none';
+
+        const html = document.documentElement.outerHTML;
+
+        toolbar.style.display = '';
+        hint.style.display = '';
+        toast.style.display = '';
+        document.head.removeChild(dataScript);
+
+        const blob = new Blob([
+            '<!DOCTYPE html>\n' + html
+        ], { type: 'text/html;charset=utf-8' });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'comparison.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('文件已下载！替换原文件即可保存修改');
+    }
+
+    // 保存并上传到GitHub
+    async function saveAndUpload() {
+        collectEdits();
+        showToast('正在上传到 GitHub...', 'info');
+
+        // 将 scenarios 数据注入
+        const dataScript = document.createElement('script');
+        dataScript.id = '__saved_data__';
+        dataScript.textContent = `window.__SAVED_SCENARIOS__ = ${JSON.stringify(scenarios)};`;
+        document.head.appendChild(dataScript);
+
+        const toolbar = document.querySelector('.toolbar');
+        const hint = document.getElementById('edit-hint');
+        const toast = document.getElementById('toast-success');
+        toolbar.style.display = 'none';
+        hint.style.display = 'none';
+        toast.style.display = 'none';
+
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+        toolbar.style.display = '';
+        hint.style.display = '';
+        toast.style.display = '';
+        document.head.removeChild(dataScript);
+
+        try {
+            const base64 = btoa(unescape(encodeURIComponent(html)));
+
+            let sha = null;
+            try {
+                const check = await fetch(`https://api.github.com/repos/781450632/bank-feature-platform/contents/comparison.html?ref=main`, {
+                    headers: {
+                        'Authorization': 'token ' + (window.__GH_TOKEN__ || ''),
+                        'Accept': 'application/vnd.github+json'
+                    }
+                });
+                if (check.ok) {
+                    const data = await check.json();
+                    sha = data.sha;
+                }
+            } catch {}
+
+            const body = {
+                message: 'Update comparison.html - 内容更新',
+                content: base64,
+                branch: 'main'
+            };
+            if (sha) body.sha = sha;
+
+            const resp = await fetch('https://api.github.com/repos/781450632/bank-feature-platform/contents/comparison.html', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': 'token ' + (window.__GH_TOKEN__ || ''),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github+json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (resp.ok) {
+                showToast('上传成功！链接已更新');
+            } else {
+                const err = await resp.json();
+                console.error('Upload error:', err);
+                showToast('上传失败，请尝试下载方式');
+            }
+        } catch (e) {
+            console.error('Upload error:', e);
+            showToast('网络错误，请尝试下载方式');
+        }
+    }
+
+    // 重置页面（刷新）
+    function resetPage() {
+        if (confirm('确定撤销所有修改吗？页面将恢复到初始状态。')) {
+            localStorage.removeItem('comparison_scenarios');
+            location.reload();
+        }
+    }
+
     // 初始化
     function init() {
+        // 恢复保存的数据
+        if (window.__SAVED_SCENARIOS__) {
+            window.__SAVED_SCENARIOS__.forEach((s, i) => {
+                if (scenarios[i]) {
+                    Object.assign(scenarios[i], s);
+                    if (s.traditional) Object.assign(scenarios[i].traditional, s.traditional);
+                    if (s.assistant) Object.assign(scenarios[i].assistant, s.assistant);
+                }
+            });
+        } else {
+            loadSavedData();
+        }
+
         initParticles();
         renderTabs();
         renderComparison();
         renderSummary();
 
-        // 窗口尺寸变化时更新 slider
         window.addEventListener('resize', updateSlider);
+
+        setTimeout(() => {
+            document.getElementById('edit-hint').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('edit-hint').classList.remove('show');
+            }, 4000);
+        }, 1000);
     }
 
     document.addEventListener('DOMContentLoaded', init);
